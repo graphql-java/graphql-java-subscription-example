@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" ontent="text/html; charset=UTF-8">
+    <title>Web Socket Events</title>
+    <style>
+        body {
+            font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+            font-weight: 300;
+        }
+
+        .stockWrapper {
+            display: block;
+            padding: 20px;
+            font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+            font-weight: 300;
+        }
+
+        .stockSymbol {
+            font-weight: 600;
+        }
+
+        .stockPrice {
+            font-weight: 600;
+            color: red;
+        }
+
+        .stockUp {
+            font-weight: 600;
+            color: green;
+        }
+
+        .stockTime {
+            font-weight: 600;
+            color: grey;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"></script>
+    <script>
+        function test() {
+            var exampleSocket = new WebSocket("ws://localhost:3000/stockticker");
+
+            exampleSocket.onopen = function (event) {
+                console.log("web socket opened");
+                exampleSocket.send("ELO");
+            };
+
+            var STOCK_CODES = {}
+
+            exampleSocket.onmessage = function (event) {
+                var data = event.data;
+                var msg = JSON.parse(data);
+                console.log(data);
+                STOCK_CODES[msg.stockCode] = msg;
+
+                var stockString = '';
+                Object.keys(STOCK_CODES).forEach(function (stockCode) {
+                    var stock = STOCK_CODES[stockCode];
+                    stockString += '<div class="stockWrapper">';
+                    stockString += '<span class="stockSymbol"> ' + stockCode + ' </span>';
+                    stockString += '<span class="stockPrice'
+                    if (stock.stockPriceChange > 0) {
+                        stockString += ', stockUp'
+                    }
+                    stockString += '">$' + stock.stockPrice + '</span>';
+                    stockString += '</div>';
+                });
+                $('.stockTick').html(stockString)
+            };
+        }
+
+        window.addEventListener("load", test);
+    </script>
+</head>
+<body>
+<div class="explanation">
+    <p>This demonstrates the use of graphql subscriptions and web sockets to send a stream of imagined stock price
+        updates to this page.</p>
+    <p>The updates are continuously sent from a server side publish and subscribe system (RxJava in this case) and
+        pushed
+        down to the browser client while applying graphql shapes to the subscription data</p>
+</div>
+<h1>Stock Prices</h1>
+<div class="stockTick">Pending subscription...</div>
+</body>
+</html>
