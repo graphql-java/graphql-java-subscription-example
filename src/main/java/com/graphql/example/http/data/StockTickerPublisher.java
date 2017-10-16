@@ -1,10 +1,10 @@
 package com.graphql.example.http.data;
 
 import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.observables.ConnectableObservable;
-import org.reactivestreams.Publisher;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,20 +20,18 @@ import java.util.concurrent.TimeUnit;
 
 public class StockTickerPublisher {
 
-    final Publisher<StockPriceUpdate> publisher;
+    final Flowable<StockPriceUpdate> publisher;
 
     public StockTickerPublisher() {
         Observable<StockPriceUpdate> stockPriceUpdateObservable = Observable.create(emitter -> {
 
             ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-            executorService.scheduleAtFixedRate(newStockTick(emitter), 0, 5, TimeUnit.SECONDS);
+            executorService.scheduleAtFixedRate(newStockTick(emitter), 0, 2, TimeUnit.SECONDS);
 
         });
 
-
         ConnectableObservable<StockPriceUpdate> connectableObservable = stockPriceUpdateObservable.share().publish();
         connectableObservable.connect();
-
 
         publisher = connectableObservable.toFlowable(BackpressureStrategy.BUFFER);
     }
@@ -49,12 +47,20 @@ public class StockTickerPublisher {
 
     private void emitStocks(ObservableEmitter<StockPriceUpdate> emitter, List<StockPriceUpdate> stockPriceUpdates) {
         for (StockPriceUpdate stockPriceUpdate : stockPriceUpdates) {
-            emitter.onNext(stockPriceUpdate);
+            try {
+                emitter.onNext(stockPriceUpdate);
+            } catch (RuntimeException rte) {
+                rte.printStackTrace();
+            }
         }
     }
 
-    public Publisher<StockPriceUpdate> getPublisher() {
+    public Flowable<StockPriceUpdate> getPublisher() {
         return publisher;
+    }
+
+    public Flowable<StockPriceUpdate> getPublisher(List<String> stockCodes) {
+        return publisher.filter(stockPriceUpdate -> stockCodes.contains(stockPriceUpdate.getStockCode()));
     }
 
     private List<StockPriceUpdate> getUpdates(int number) {

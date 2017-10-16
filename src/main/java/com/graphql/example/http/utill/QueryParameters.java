@@ -1,8 +1,5 @@
 package com.graphql.example.http.utill;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,18 +35,12 @@ public class QueryParameters {
         return variables;
     }
 
-    public static QueryParameters from(HttpServletRequest request) {
+    public static QueryParameters from(String queryMessage) {
         QueryParameters parameters = new QueryParameters();
-        if ("POST".equalsIgnoreCase(request.getMethod())) {
-            Map<String, Object> json = readJSON(request);
-            parameters.query = (String) json.get("query");
-            parameters.operationName = (String) json.get("operationName");
-            parameters.variables = getVariables(json.get("variables"));
-        } else {
-            parameters.query = request.getParameter("query");
-            parameters.operationName = request.getParameter("operationName");
-            parameters.variables = getVariables(request.getParameter("variables"));
-        }
+        Map<String, Object> json = JsonKit.toMap(queryMessage);
+        parameters.query = (String) json.get("query");
+        parameters.operationName = (String) json.get("operationName");
+        parameters.variables = getVariables(json.get("variables"));
         return parameters;
     }
 
@@ -62,25 +53,6 @@ public class QueryParameters {
             return vars;
         }
         return JsonKit.toMap(String.valueOf(variables));
-    }
-
-    private static Map<String, Object> readJSON(HttpServletRequest request) {
-        String s = readPostBody(request);
-        return JsonKit.toMap(s);
-    }
-
-    private static String readPostBody(HttpServletRequest request) {
-        try {
-            StringBuilder sb = new StringBuilder();
-            BufferedReader reader = request.getReader();
-            int c;
-            while ((c = reader.read()) != -1) {
-                sb.append((char) c);
-            }
-            return sb.toString();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

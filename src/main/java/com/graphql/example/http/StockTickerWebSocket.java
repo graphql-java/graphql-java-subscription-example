@@ -1,8 +1,15 @@
 package com.graphql.example.http;
 
 import com.graphql.example.http.data.StockPriceUpdate;
-import com.graphql.example.http.data.StockTickerPublisher;
 import com.graphql.example.http.utill.JsonKit;
+import com.graphql.example.http.utill.QueryParameters;
+import graphql.ExecutionInput;
+import graphql.ExecutionResult;
+import graphql.GraphQL;
+import graphql.execution.SubscriptionExecutionStrategy;
+import graphql.execution.instrumentation.ChainedInstrumentation;
+import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.tracing.TracingInstrumentation;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 import org.reactivestreams.Publisher;
@@ -14,70 +21,19 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.Arrays.asList;
+
 public class StockTickerWebSocket extends WebSocketAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(StockTickerWebSocket.class);
 
-    private final static StockTickerPublisher STOCK_TICKER_PUBLISHER = new StockTickerPublisher();
 
-
+    StockTickerGraphqlPublisher graphqlPublisher = new StockTickerGraphqlPublisher();
     private AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
-
-    public StockTickerWebSocket() {
-    }
-
-    private Publisher<StockPriceUpdate> getPublisher() {
-        return STOCK_TICKER_PUBLISHER.getPublisher();
-    }
 
     @Override
     public void onWebSocketConnect(Session session) {
         super.onWebSocketConnect(session);
-
-        getPublisher().subscribe(new Subscriber<StockPriceUpdate>() {
-
-            @Override
-            public void onSubscribe(Subscription s) {
-                subscriptionRef.set(s);
-                request(1);
-            }
-
-            @Override
-            public void onNext(StockPriceUpdate stockPriceUpdate) {
-                request(1);
-                log.debug("Sending stick price update");
-                try {
-                    getRemote().sendString(JsonKit.toJsonString(stockPriceUpdate));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                log.error("Subscription threw an exception", t);
-                session.close();
-            }
-
-            @Override
-            public void onComplete() {
-                log.info("Subscription complete");
-                session.close();
-            }
-        });
-    }
-
-    private void request(int n) {
-        Subscription subscription = subscriptionRef.get();
-        if (subscription != null) {
-            subscription.request(n);
-        }
-    }
-
-    @Override
-    public void onWebSocketText(String message) {
-        super.onWebSocketText(message);
-        log.info("Websocket said {}", message);
     }
 
     @Override
@@ -87,6 +43,75 @@ public class StockTickerWebSocket extends WebSocketAdapter {
         Subscription subscription = subscriptionRef.get();
         if (subscription != null) {
             subscription.cancel();
+        }
+    }
+
+    @Override
+    public void onWebSocketText(String graphqlQuery) {
+        log.info("Websocket said {}", graphqlQuery);
+
+        QueryParameters parameters = QueryParameters.from(graphqlQuery);
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(parameters.getQuery())
+                .variables(parameters.getVariables())
+                .operationName(parameters.getOperationName())
+                .build();
+
+        Instrumentation instrumentation = new ChainedInstrumentation(
+                asList(new TracingInstrumentation())
+        );
+
+        // finally you build a runtime graphql object and execute the query
+        GraphQL graphQL = GraphQL
+                .newGraphQL(graphqlPublisher.getGraphQLSchema())
+                .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy())
+                // instrumentation is pluggable
+                .instrumentation(instrumentation)
+                .build();
+
+        ExecutionResult executionResult = graphQL.execute(executionInput);
+
+        Publisher<ExecutionResult> stockPriceStream = executionResult.getData();
+
+        stockPriceStream.subscribe(new Subscriber<ExecutionResult>() {
+
+            @Override
+            public void onSubscribe(Subscription s) {
+                subscriptionRef.set(s);
+                request(1);
+            }
+
+            @Override
+            public void onNext(ExecutionResult er) {
+                log.debug("Sending stick price update");
+                try {
+                    Object stockPriceUpdate = er.getData();
+                    getRemote().sendString(JsonKit.toJsonString(stockPriceUpdate));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                request(1);
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                log.error("Subscription threw an exception", t);
+                getSession().close();
+            }
+
+            @Override
+            public void onComplete() {
+                log.info("Subscription complete");
+                getSession().close();
+            }
+        });
+    }
+
+    private void request(int n) {
+        Subscription subscription = subscriptionRef.get();
+        if (subscription != null) {
+            subscription.request(n);
         }
     }
 }

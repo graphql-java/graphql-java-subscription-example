@@ -1,12 +1,20 @@
-# graphql-java-subscription-example
+# graphql-java Subscriptions over WebSockets example
 
-An example of using graphql-java in a HTTP application with server side
-subscriptions.
+An example of using graphql-java subscriptions via websockets.
 
 
 To build the code type
 
     ./gradlew build
+    
+Note: This wont currently build from Maven publicly because the subscription support is on master yet.  
+
+See https://github.com/graphql-java/graphql-java/pull/754
+
+Check that out and run to install it locally
+
+    ./gradlew clean install -DRELEASE_VERSION=6.0-subscriptions
+    
     
 To run the code type    
     
@@ -15,43 +23,5 @@ To run the code type
 Point your browser at 
 
     http://localhost:3000/    
-
-
-Some example graphql queries might be
-
-     {
-       hero {
-         name
-         friends {
-           name
-           friends {
-             id
-             name
-           }
-           
-         }
-       }
-     }
-
-
-or maybe
-
-    {
-      luke: human(id: "1000") {
-        ...HumanFragment
-      }
-      leia: human(id: "1003") {
-        ...HumanFragment
-      }
-    }
-    
-    fragment HumanFragment on Human {
-      name
-      homePlanet
-      friends {
-        name
-        __typename
-      }
-    }
 
 
