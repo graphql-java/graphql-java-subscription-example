@@ -1,6 +1,5 @@
 package com.graphql.example.http;
 
-import com.graphql.example.http.data.StockPriceUpdate;
 import com.graphql.example.http.utill.JsonKit;
 import com.graphql.example.http.utill.QueryParameters;
 import graphql.ExecutionInput;
@@ -23,13 +22,16 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Arrays.asList;
 
+/**
+ * A websocket object is created per browser client.  This is the main interface code between the backing
+ * publisher of event objects, graphql subscriptions in the middle and responses back to the browser.
+ */
 public class StockTickerWebSocket extends WebSocketAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(StockTickerWebSocket.class);
 
-
-    StockTickerGraphqlPublisher graphqlPublisher = new StockTickerGraphqlPublisher();
-    private AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
+    private final StockTickerGraphqlPublisher graphqlPublisher = new StockTickerGraphqlPublisher();
+    private final AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
 
     @Override
     public void onWebSocketConnect(Session session) {
@@ -62,11 +64,12 @@ public class StockTickerWebSocket extends WebSocketAdapter {
                 asList(new TracingInstrumentation())
         );
 
-        // finally you build a runtime graphql object and execute the query
+        //
+        // In order to have subscriptions in graphql-java you MUST use the
+        // SubscriptionExecutionStrategy strategy.
+        //
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphqlPublisher.getGraphQLSchema())
-                .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy())
-                // instrumentation is pluggable
                 .instrumentation(instrumentation)
                 .build();
 
