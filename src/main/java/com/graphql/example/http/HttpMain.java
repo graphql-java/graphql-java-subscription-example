@@ -16,16 +16,15 @@ import org.eclipse.jetty.servlet.ServletHolder;
 @SuppressWarnings("unchecked")
 public class HttpMain {
 
-    static final int PORT = 3000;
-    static GraphQLSchema schema = null;
+    private static final int PORT = 3000;
 
     public static void main(String[] args) throws Exception {
         //
         // This example uses Jetty as an embedded HTTP server
         Server server = new Server(PORT);
-        //
-        // In Jetty, handlers are how your get called backed on a request
 
+        //
+        // In Jetty, handlers are how your get called back on a request
         ServletContextHandler servletContextHandler = new ServletContextHandler();
         servletContextHandler.setContextPath("/");
 

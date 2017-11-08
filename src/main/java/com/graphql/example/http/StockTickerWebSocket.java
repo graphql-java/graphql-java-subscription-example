@@ -5,7 +5,6 @@ import com.graphql.example.http.utill.QueryParameters;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
-import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
@@ -20,7 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 
 /**
  * A websocket object is created per browser client.  This is the main interface code between the backing
@@ -61,7 +60,7 @@ public class StockTickerWebSocket extends WebSocketAdapter {
                 .build();
 
         Instrumentation instrumentation = new ChainedInstrumentation(
-                asList(new TracingInstrumentation())
+                singletonList(new TracingInstrumentation())
         );
 
         //

@@ -13,7 +13,7 @@ import java.util.Map;
  * This example code chose to use GSON as its JSON parser. Any JSON parser should be fine
  */
 public class JsonKit {
-    static final Gson GSON = new GsonBuilder()
+    private static final Gson GSON = new GsonBuilder()
             //
             // This is important because the graphql spec says that null values should be present
             //

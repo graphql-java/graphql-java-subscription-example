@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 public class StockTickerPublisher {
 
-    final Flowable<StockPriceUpdate> publisher;
+    private final Flowable<StockPriceUpdate> publisher;
 
     public StockTickerPublisher() {
         Observable<StockPriceUpdate> stockPriceUpdateObservable = Observable.create(emitter -> {
@@ -72,7 +72,7 @@ public class StockTickerPublisher {
     }
 
 
-    final static Map<String, BigDecimal> CURRENT_STOCK_PRICES = new ConcurrentHashMap<>();
+    private final static Map<String, BigDecimal> CURRENT_STOCK_PRICES = new ConcurrentHashMap<>();
 
     static {
         CURRENT_STOCK_PRICES.put("TEAM", dollars(39, 64));

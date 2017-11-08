@@ -19,9 +19,9 @@ import java.util.Map;
  */
 public class QueryParameters {
 
-    String query;
-    String operationName;
-    Map<String, Object> variables = Collections.emptyMap();
+    private String query;
+    private String operationName;
+    private Map<String, Object> variables = Collections.emptyMap();
 
     public String getQuery() {
         return query;
