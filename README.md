@@ -2,24 +2,15 @@
 
 An example of using graphql subscriptions via websockets, graphql-java, reactive-streams and RxJava.
 
-Note: This wont currently build from Maven publicly because the subscription support is not on master yet.  
-
-See https://github.com/graphql-java/graphql-java/pull/754
-
-Check that out and install it locally via
-
-    ./gradlew clean install -DRELEASE_VERSION=6.0-subscriptions
-
-
-To build the example code type
+To build the example code in this repository type:
 
     ./gradlew build
     
-To run the example code type    
+To run the example code type:
     
     ./gradlew run
     
-Point your browser at 
+To access the example application, point your browser at:
 
     http://localhost:3000/  
     
@@ -27,9 +18,9 @@ Point your browser at
 
 This example shows how you can use graphql-java subscription support to "subscribe" to a publisher of events.
 Then as events occur, graphql-java will map the original graphql query over those same event objects and send out
-a stream of ExecutionResult objects.
+a stream of `ExecutionResult` objects.
 
-So here we have stock update type system defined as
+In this example application we have a stock update type system defined as:
 
     type Subscription {
         stockQuotes(stockCodes:[String]) : StockPriceUpdate!
@@ -42,7 +33,7 @@ So here we have stock update type system defined as
         stockPriceChange : Float
     }
 
-We have a JavaScript client that sends a subscription graphql query over websockets to the server.
+The JavaScript client sends a subscription graphql query over websockets to the server:
 
     var query = 'subscription StockCodeSubscription { \n' +
         '    stockQuotes {' +
@@ -58,7 +49,7 @@ We have a JavaScript client that sends a subscription graphql query over websock
     };
     exampleSocket.send(JSON.stringify(graphqlMsg));
    
-The server executes this with the graphql-java engine
+The server executes this with the graphql-java engine:
 
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphqlPublisher.getGraphQLSchema())
@@ -66,7 +57,7 @@ The server executes this with the graphql-java engine
 
         ExecutionResult executionResult = graphQL.execute(executionInput);
 
-The result of that initial subscription query is a http://www.reactive-streams.org/ Publisher
+The result of that initial subscription query is a http://www.reactive-streams.org/ `Publisher`
 
         Publisher<ExecutionResult> stockPriceStream = executionResult.getData();
         
@@ -78,7 +69,7 @@ implementation as a source.  graphql-java uses the reactive streams interfaces a
 See https://github.com/ReactiveX/RxJava for more information on RxJava.  
         
 The server side code then subscribes to this publisher of events and sends the results back over the websocket
-to the waiting browser client
+to the waiting browser client:
 
         stockPriceStream.subscribe(new Subscriber<ExecutionResult>() {
 
@@ -115,7 +106,7 @@ to the waiting browser client
 
 The selection set of fields named in the original query will be applied to each underlying stock update object.  
 
-So we had a selection set as follows : 
+The selection set in this example application is selected as follows:
 
         stockQuotes {
             dateTime
@@ -124,8 +115,5 @@ So we had a selection set as follows :
             stockPriceChange
         }
 
-The underling stock update object is mapped to this selection of fields, just like any normal graphql query.  The format of the results
-on the browser is JSON, again like any other normal graphql query.
-       
-
-
+The underling stock update object is mapped to this selection of fields, just like any normal graphql query.  The format
+of the results on the browser is JSON, again like any other normal graphql query.
