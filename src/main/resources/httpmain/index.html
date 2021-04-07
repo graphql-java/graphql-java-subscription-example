@@ -91,7 +91,7 @@
                 networkBlip();
 
                 var data = event.data;
-                var msg = JSON.parse(data);
+                var msg = JSON.parse(data).stockQuotes;
                 console.log(data);
                 var stockCode = msg.stockCode;
                 var stockList = STOCK_CODES_UPDATES[stockCode];
